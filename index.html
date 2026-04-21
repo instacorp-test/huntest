@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Off-Grid Resource Guide: Simulator PROTOTYPE</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="header-section">
+                <h2>System Parameters</h2>
+                <p><strong>Status:</strong> <span class="success">Optimized & Confirmed</span></p>
+                <p class="warning">**Reminder: Back up this file frequently!**</p>
+                <p class="warning">**PRO/LITE Feature Plan:** <span class="success">Pro version will integrate Gemini & Maps APIs here.</span></p>
+            </div>
+
+            <div class="system-config">
+                <h3>System Configuration (24V Rolls FLA)</h3>
+                <div class="input-group">
+                    <label for="solar-panels">Solar Panels (Quantity):</label>
+                    <input type="number" id="solar-panels" value="6" min="1" oninput="updateSimulation()">
+                </div>
+                <div class="input-group">
+                    <label for="panel-wattage">Panel Wattage (W - Jinko JKM250P-60):</label>
+                    <input type="number" id="panel-wattage" value="250" min="5" oninput="updateSimulation()">
+                </div>
+                <div class="input-group">
+                    <label for="battery-voltage">System Voltage (V - Magnum):</label>
+                    <input type="number" id="battery-voltage" value="24" readonly>
+                </div>
+                <div class="input-group">
+                    <label for="battery-capacity">Battery Capacity (Rolls 4-Unit FLA - 1100 AH):</label>
+                    <input type="number" id="battery-capacity" value="1100" oninput="updateSimulation()">
+                </div>
+                <div class="input-group">
+                    <label for="dod">Depth of Discharge (DOD % - Max Usable FLA):</label>
+                    <input type="number" id="dod" value="50" min="10" max="90" oninput="updateSimulation()">
+                </div>
+                <div class="input-group">
+                    <label for="inverter-efficiency">Inverter Efficiency (Magnum MS-4024PAE %):</label>
+                    <input type="number" id="inverter-efficiency" value="92" min="80" max="99" oninput="updateSimulation()">
+                </div>
+            </div>
+
+            <div class="system-config">
+                <h3>Environmental Simulation</h3>
+                <div class="input-group slider-group">
+                    <label for="sunlight-intensity">Sunlight Intensity (0-100%):</label>
+                    <input type="range" id="sunlight-intensity" min="0" max="100" value="70" oninput="updateSimulation()">
+                    <span id="sunlight-value">70%</span>
+                </div>
+                <div class="input-group slider-group">
+                    <label for="temperature">Ambient Temperature (C):</label>
+                    <input type="range" id="temperature" min="-20" max="40" value="10" oninput="updateSimulation()">
+                    <span id="temperature-value">10 °C</span>
+                </div>
+            </div>
+            
+            <div class="system-config">
+                <h3>Battery Comparison (PRO Feature)</h3>
+                <button onclick="saveSetup('Rolls FLA')" style="background-color: #007bff;">Save Rolls Setup</button>
+                <button onclick="saveSetup('Anker LFP')" style="background-color: #6f42c1;">Save LFP Setup</button>
+                <button onclick="loadComparison()" style="background-color: #ffc107; color: #333;">Compare Saved Setups</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <h2>Results Dashboard & Load Analysis</h2>
+
+            <div class="kpi-grid">
+                <div class="kpi" style="background-color: #004a7c;">
+                    <div class="kpi-value" id="kpi-production">0 Wh</div>
+                    <div class="kpi-label">Daily Solar Production</div>
+                </div>
+                <div class="kpi" style="background-color: #dc3545;">
+                    <div class="kpi-value" id="kpi-consumption">0 Wh</div>
+                    <div class="kpi-label">Total Daily Consumption</div>
+                </div>
+                <div class="kpi" style="background-color: #28a745;">
+                    <div class="kpi-value" id="kpi-autonomy">0 Days</div>
+                    <div class="kpi-label">Battery Autonomy (Target: 2.0+ Days)</div>
+                </div>
+            </div>
+
+            <h3>Appliance Load Definition (Daily Wh: <span id="total-wh-display">0</span>)</h3>
+            <div class="appliances-list">
+                <div class="appliance-item" style="font-weight: bold; background-color: #f0f0f0;">
+                    <div>Appliance Name</div>
+                    <div>Wattage (W)</div>
+                    <div>Hours/Day</div>
+                    <div>Quantity</div>
+                    <div></div>
+                </div>
+                <div id="appliance-rows">
+                    </div>
+                <div style="text-align: right;">
+                    <button onclick="addAppliance()">Add Appliance</button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 20px;">
+                <div class="chart-container" style="flex: 1;">
+                    <h3>Energy Flow Simulation (24 Hours)</h3>
+                    <canvas id="energyFlowChart"></canvas>
+                </div>
+                <div class="chart-container" style="flex: 1; max-width: 400px;">
+                    <h3>Daily Consumption Breakdown</h3>
+                    <canvas id="consumptionBreakdownChart"></canvas>
+                </div>
+            </div>
+
+            <div id="recommendations">
+                <h3>Recommendations & Insights</h3>
+                <p id="insight-text">
+                    The system analysis will appear here after you update the inputs.
+                </p>
+                <button onclick="runGeminiAnalysis()" style="background-color: #6f42c1; margin-top: 15px;">Run Gemini Energy Advisor (PRO Feature)</button>
+            </div>
+            
+            <div id="comparison-results" style="margin-top: 30px; border-top: 2px solid #ccc; padding-top: 20px; display: none;">
+                <h3>Setup Comparison Results</h3>
+                <pre id="comparison-data"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
